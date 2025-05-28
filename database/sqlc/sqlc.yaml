@@ -5,6 +5,6 @@ sql:
     schema: "schema.sql"
     gen:
       go:
-        package: "data_layer"
-        out: "./../../cmd/data_layer"
+        package: "datalayer"
+        out: "./../../datalayer"
         sql_package: "pgx/v4"

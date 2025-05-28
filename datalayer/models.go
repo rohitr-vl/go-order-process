@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.28.0
 
-package data_layer
+package datalayer
 
 import (
 	"time"

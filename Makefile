@@ -1,5 +1,6 @@
 ORDER_PROCESS_BINARY=orderProcessApp.exe
-DSN="host=postgres port=5432 user=postgres password=super369 dbname=go-order-process sslmode=disable timezone=UTC connect_timeout=5"
+# DSN="host=postgres port=5432 user=postgres password=super369 dbname=go-order-process sslmode=disable timezone=UTC connect_timeout=5"
+DATABASE_URL="host=localhost port=5432 user=postgres password=super369 dbname=go-order-process sslmode=disable timezone=UTC connect_timeout=5"
 PSQL_MIGRATE="postgresql://postgres:super369@localhost:5432/go-order-process?sslmode=disable"
 
 ## postgres db migration
@@ -23,7 +24,7 @@ build:
 
 run: build migration_up
 	@echo "Starting..."
-	@env DSN=${DSN} ./${ORDER_PROCESS_BINARY} &
+	@env DATABASE_URL=${DATABASE_URL} ./${ORDER_PROCESS_BINARY} &
 	@echo "back end started!"
 
 clean:
