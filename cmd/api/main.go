@@ -1,20 +1,31 @@
 package main
 
 import (
+	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 	"time"
 
-	_ "github.com/jackc/pgconn"
-	_ "github.com/jackc/pgx/v4"
-	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/jackc/pgx/v4"
 )
 
 func main() {
 	// connect to db
-	db := initDB()
-	db.Ping()
+	dbConn := initDB()
+	dbConn.Ping()
+
+	// q := db.New(dbConn)
+	q := db.New(dbConn)
+
+    author, err := q.GetAuthor(context.Background(), 1)
+    if err != nil {
+            fmt.Fprintf(os.Stderr, "GetAuthor failed: %v\n", err)
+            os.Exit(1)
+    }
+
+    fmt.Println(author.Name)
 
 	// create channels
 
@@ -52,9 +63,17 @@ func connectToDB() *sql.DB {
 }
 
 func openDB(dsn string) (*sql.DB, error) {
-	db, err := sql.Open("pgx", dsn)
+/*  db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return nil, err
 	}
-	return db, nil
+*/
+	// sqlc
+	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
+    if err != nil {
+            fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+            os.Exit(1)
+    }
+    defer conn.Close(context.Background())
+	return conn, nil
 }
