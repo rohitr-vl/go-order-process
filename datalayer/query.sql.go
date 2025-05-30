@@ -9,6 +9,17 @@ import (
 	"context"
 )
 
+const countOrders = `-- name: CountOrders :one
+SELECT count(*) FROM orders
+`
+
+func (q *Queries) CountOrders(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countOrders)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createOrder = `-- name: CreateOrder :one
 INSERT INTO orders (
   customer_id, items, status

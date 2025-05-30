@@ -10,6 +10,11 @@ import (
 
 func (app *Config) routes() http.Handler {
 	mux := chi.NewRouter()
+
+	mux.Use(middleware.Recoverer)
+	mux.Use(middleware.Logger)
+	mux.Use(ValidateRequest)
+
 	// specify who is allowed to connect to our API service
 	mux.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},

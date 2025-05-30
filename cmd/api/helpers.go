@@ -5,7 +5,14 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 )
+
+type jsonRequest struct {
+	CustomerId	string   `json:"customer_id"`
+	Items 		[]string `json:"items"`
+	Total		float32    `json:"total"`
+}
 
 type jsonResponse struct {
 	Error   bool   `json:"error"`
@@ -59,4 +66,8 @@ func (app *Config) errorJson(w http.ResponseWriter, err error, status ...int) er
 	payload.Message = err.Error()
 
 	return app.writeJson(w, statusCode, payload)
+}
+
+func SanitizeValue(val string) string {
+	return strings.TrimSpace(val)
 }

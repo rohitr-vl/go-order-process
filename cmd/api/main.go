@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v4"
 )
 
-const webPort = "80"
+const webPort = "8091"
 
 type Config struct {
 	Repo datalayer.Queries

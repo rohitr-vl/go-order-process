@@ -20,3 +20,6 @@ UPDATE orders
 set status = $2
 WHERE order_id = $1
 RETURNING *;
+
+-- name: CountOrders :one
+SELECT count(*) FROM orders;
