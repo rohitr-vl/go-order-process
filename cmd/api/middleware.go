@@ -4,7 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type contextKey string
@@ -12,19 +15,55 @@ type contextKey string
 func ValidateRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		method := r.Method
+		log.Println("Middleware ValidateRequest, method:", method)
 		switch method {
 		case "GET":
-			fmt.Fprintf(w, "This is a GET request")
+			log.Println("Received Get request")
+			statusParam := ValidateGetRequest(w, r)
+			ctxRequestKey := contextKey("validatedStatus")
+			ctx := context.WithValue(r.Context(), ctxRequestKey, statusParam)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		case "POST":
-			ValidatePostRequest(next)
+			log.Println("Received Post request")
+			req := ValidatePostRequest(w, r)
+			ctxRequestKey := contextKey("validatedRequest")
+			ctx := context.WithValue(r.Context(), ctxRequestKey, req)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		default:
-			fmt.Fprintf(w, "Unsupported method: %s", method)
+			fmt.Fprintf(w, "Unsupported method: %s\n", method)
 		}
 	})
 }
 
-func ValidatePostRequest(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func ValidateGetRequest(w http.ResponseWriter, r *http.Request) string {
+		statusParam := chi.URLParam(r, "status")
+		log.Printf("GET status param: %s\n", statusParam)
+		statusParam = SanitizeValue(statusParam)
+		log.Printf("GET status param after sanitization: %s\n", statusParam)
+		if len(statusParam) > 0 {
+			err := json.NewDecoder(r.Body).Decode(&statusParam)
+			if err != nil {
+				payload := jsonResponse{
+					Error:   true,
+					Message: fmt.Sprintf("Invalid order status error: %s", err),
+					Data:    nil,
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(400)
+				out, _ := json.Marshal(payload)
+				log.Println("GET error payload:", err)
+				_, err = w.Write(out)
+				if err != nil {
+					fmt.Println("Error while return error message from middleware")
+				}
+				return ""
+			}
+			return statusParam
+		}
+		return ""
+	}
+
+func ValidatePostRequest(w http.ResponseWriter, r *http.Request) jsonRequest {
 		var req jsonRequest
 		var errMsg string
 
@@ -36,7 +75,6 @@ func ValidatePostRequest(next http.Handler) http.Handler {
 		if err != nil {
 			errMsg = fmt.Sprintf("Error: %s", err)
 			fmt.Println(errMsg)
-
 		}
 		custID := SanitizeValue(req.CustomerId)
 
@@ -54,6 +92,7 @@ func ValidatePostRequest(next http.Handler) http.Handler {
 			errMsg = "Please provide Order price!"
 			fmt.Println(errMsg)
 		}
+
 		if errMsg != "" {
 			payload := jsonResponse{
 				Error:   true,
@@ -67,11 +106,8 @@ func ValidatePostRequest(next http.Handler) http.Handler {
 			if err != nil {
 				fmt.Println("Error while return error message from middleware")
 			}
-			return
+			// return req
 		}
-
-		ctxRequestKey := contextKey("validatedRequest")
-		ctx := context.WithValue(r.Context(), ctxRequestKey, req)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
+		// log.Println("Validated POST request: ", req)
+		return req
+	}

@@ -6,8 +6,6 @@ import (
 	"go-order-process/datalayer"
 	"log"
 	"net/http"
-
-	"github.com/go-chi/chi/v5"
 )
 
 func (app *Config) GetAllOrders(w http.ResponseWriter, r *http.Request) {
@@ -16,14 +14,14 @@ func (app *Config) GetAllOrders(w http.ResponseWriter, r *http.Request) {
 	isErr := false
 
 	// check for status param
-	statusParam := chi.URLParam(r, "status")
-	statusParam = SanitizeValue(statusParam)
-	// log.Printf("GET param status: %s\n", statusParam)
-	if len(statusParam) > 0 {
+	ctx := r.Context()
+	orderStatus, ok := ctx.Value(contextKey("validatedStatus")).(string)
+	log.Printf("GET, context status: %s, ok: %t", orderStatus, ok)
+	if len(orderStatus) > 0 && ok {
 		// return all orders
-		allOrders, err = app.Repo.ListOrdersByStatus(context.Background(), statusParam)
+		allOrders, err = app.Repo.ListOrdersByStatus(context.Background(), orderStatus)
 		if err != nil {
-			log.Printf("Error while fetching orders with status:%s. Error:%s\n",statusParam, err)
+			log.Printf("Error while fetching orders with status:%s. Error:%s\n",orderStatus, err)
 			isErr=true
 		} else {
 			fmt.Println("All Orders by status:", allOrders)
@@ -49,6 +47,7 @@ func (app *Config) GetAllOrders(w http.ResponseWriter, r *http.Request) {
 func (app *Config) AcceptOrder(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	validRequest, ok := ctx.Value(contextKey("validatedRequest")).(jsonRequest)
+	log.Println("Is valid Post request:", ok)
 	if ok {
 		fmt.Println("Valid POST Request:", validRequest)
 	} else {
